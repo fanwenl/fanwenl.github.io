@@ -85,11 +85,11 @@
 
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="fanwenl's NOtes">
+<meta property="og:title" content="fanwenl's Notes">
 <meta property="og:url" content="http://yoursite.com/index.html">
-<meta property="og:site_name" content="fanwenl's NOtes">
+<meta property="og:site_name" content="fanwenl's Notes">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="fanwenl's NOtes">
+<meta name="twitter:title" content="fanwenl's Notes">
 
 
 
@@ -123,7 +123,7 @@
 
 
 
-  <title> fanwenl's NOtes </title>
+  <title> fanwenl's Notes </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="">
@@ -156,7 +156,7 @@
   <div class="custom-logo-site-title">
     <a href="/"  class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <span class="site-title">fanwenl's NOtes</span>
+      <span class="site-title">fanwenl's Notes</span>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
@@ -256,6 +256,145 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="fanwenl">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/uploads/avatar.jpg">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="fanwenl's Notes">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="fanwenl's Notes" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/" itemprop="url">
+                  [原创]Cortex-M处理器(STM32)启动过程分析
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Veröffentlicht am</span>
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-11-24T13:52:05+08:00">
+                2016-11-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="Cortex-M-处理器启动分析"><a href="#Cortex-M-处理器启动分析" class="headerlink" title="Cortex-M 处理器启动分析"></a>Cortex-M 处理器启动分析</h3><p>Cortex-M 处理器中集成了存储器重映射、存储器别名的系统特性；使用这些特性可以提高处理器存储系统的灵活性，大大简化处理器的Boot的设计（不同的处理器生产商具体的实现可能不同）。<br>Cortex-M 处理器复位（重新上电也相当于复位）之后，从0x00000000开始执行第一条指令，为了可以从不同的存储器执行代码，Cortex-M 在复位时会根据芯片启动模式的选择（不同的厂商的芯片可能有所不同）将具体的代码区映射到0x00000000地址处，然后开始执行。下图是具有Boot loader的存储器重映射示例：<img src="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/bootloader.png" alt="bootloader.png" title=""><br>当选择系统从Boot loader启动并且打开存储器别名：<br>系统上电将Boot loader重映射到0x00000000，此时boot loader可以通过别名或者是其真实的地址访问，<br>执行Boot loader开始的复位向量(不论从那种存储器启动,代码开始的位置存放的是中断向量表)<br>然后执行Boot loader的相关代码<br>Boot loader代码关闭alias别名特性，memory进行Remap，有Boot loader引导执行用户Flash的程序。<br>上面说到Cortex-M处理复位之后，会将存储器进行重映射，映射之后从0x000000000开始执行代码：<br><img src="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/reset.png" alt="reset.png" title=""><br>首先从0x00000000地址处读出MSP堆栈的地址，然后从0x00000004（每个复位向量占4byte）地址处读出复位向量的地址，然后跳转到复位向量，执行复位向量。<br>MSP复位向量的设置是非常有必要的，在执行复位的很多的时间内有产生NMI或者是HardFault的可能，在异常处理前将处理器的状态压栈时需要栈存储和MSP。<br>下图是一张具体的堆栈指针初值和PC指针示意图：<br><img src="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/pc.png" alt="pc.png" title=""></p>
+<blockquote>
+<p>图中MSP的地址和具体的存储器有关（编译器设定的堆栈）例如：退栈的区域为：0x20007c00~0x20007fff（1KB）则初始MSP的指针为0x2000800.</p>
+<p>Cortex-M处理器，向量表中向量地址的最低位为1，表示为Thumb代码，图中，复位向量为0x101，而代码从0x100开始执行。</p>
+</blockquote>
+<h3 id="STM32-启动分析"><a href="#STM32-启动分析" class="headerlink" title="STM32 启动分析"></a>STM32 启动分析</h3><p>stm32有三种启动方式，如下表所示，通过配置Boot0，Boot1引脚即可实现从相应的存储器启动。<br><img src="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/stm32启动模式.png" alt="stm32启动模式.png" title=""></p>
+<blockquote>
+<p>选择从==系统存储器==自举，可以使用USART、CAN、USB、I2C等接口将程序下载到内部Flash中。</p>
+</blockquote>
+<img src="/2016/11/24/原创-Cortex-M处理器-STM32-启动过程分析/stm32.png" alt="stm32.png" title="">
+<p>上图是一张具体的STM32存储器的映射图：</p>
+<blockquote>
+<p>0x0000 0000~0x001F FFFF是存储器映射的别名区<br>0x0800 0000~0x081F FFFF是处理器的Flash区<br>0x1FFF 0000~0x1FFF 7A0F是处理器的System memory区<br>0x2000 0000开始是处理器的SRAM区</p>
+</blockquote>
+<p>处理器复位之后，根据Boot0和Boot1的选择决定将那部分存储器映射到0x00000000的地址，然后执行复位向量（如果选择从Flash启动，编译器会自动将中断向量表添加到Flash的开始区域，可以在IDE软件中进行设置）。下图是IAR软件中的复位中断向量的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">        PUBWEAK Reset_Handler</div><div class="line">        SECTION .text:CODE:REORDER:NOROOT(2)</div><div class="line">Reset_Handler</div><div class="line"></div><div class="line">        LDR     R0, =SystemInit</div><div class="line">        BLX     R0</div><div class="line">        LDR     R0, =__iar_program_start</div><div class="line">        BX      R0</div></pre></td></tr></table></figure></p>
+<p>首先调用SystemInit()(ST库提供)进行时钟，Flash读取初始、FPU特性、外部SDRAM等配置，并转入__iar_program_start中对全局变量、全局已初始化变量进行相应的初始化操作。最后，调用main()函数执行。</p>
+<h3 id="拓展阅读："><a href="#拓展阅读：" class="headerlink" title="拓展阅读："></a>拓展阅读：</h3><ul>
+<li><a href="http://www.cnblogs.com/mssql/archive/2011/01/29/tt146.html" target="_blank" rel="external">在main()之前，IAR都做了啥？</a></li>
+</ul>
+<h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
+<li>AN2606-STM32微控制器系统存储器自举模式</li>
+<li>ARM Cortex-M3 Cortex-M4 权威指南</li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
   <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/11/23/使用Git进行项目开发/">
 
   <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -265,9 +404,9 @@
   </span>
 
   <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-    <meta itemprop="name" content="fanwenl's NOtes">
+    <meta itemprop="name" content="fanwenl's Notes">
     <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
-      <img style="display:none;" itemprop="url image" alt="fanwenl's NOtes" src="">
+      <img style="display:none;" itemprop="url image" alt="fanwenl's Notes" src="">
     </span>
   </span>
 
@@ -611,9 +750,9 @@
   </span>
 
   <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-    <meta itemprop="name" content="fanwenl's NOtes">
+    <meta itemprop="name" content="fanwenl's Notes">
     <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
-      <img style="display:none;" itemprop="url image" alt="fanwenl's NOtes" src="">
+      <img style="display:none;" itemprop="url image" alt="fanwenl's Notes" src="">
     </span>
   </span>
 
@@ -750,7 +889,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">2</span>
+              <span class="site-state-item-count">3</span>
               <span class="site-state-item-name">Artikel</span>
             </a>
           </div>
@@ -760,7 +899,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">6</span>
                 <span class="site-state-item-name">Tags</span>
               </a>
             </div>
